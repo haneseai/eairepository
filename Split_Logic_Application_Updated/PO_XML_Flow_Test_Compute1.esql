@@ -1,0 +1,75 @@
+
+
+CREATE COMPUTE MODULE PO_XML_Flow_Test_Compute1
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	
+		BEGIN
+	     CALL CopyMessageHeaders();
+	     
+	 /*     IF ( InputRoot.MQMD.Priority = 9) THEN
+	      SET OutputRoot.MQMD.Priority=9; 
+	--	  SET OutputRoot.MQMD.Format = MQFMT_STRING; 
+	--	  SET OutputRoot.MQMD.Feedback=MQFB_APPL_LAST;
+		  Propagate to terminal 'out';
+	      END IF; */
+		DECLARE Indata_Blob,PoType BLOB;
+		DECLARE BlobTOChar,st_po CHARACTER;
+		DECLARE temp2 DECIMAL;
+		DECLARE repeat1 INTEGER;
+		DECLARE start INTEGER 1;
+		DECLARE startpois INTEGER 1;
+		DECLARE temp3 CHARACTER;
+		DECLARE temp4 CHARACTER '';
+		SET Environment.Properties = InputRoot.Properties ;
+
+			SET Indata_Blob=CAST(InputRoot.BLOB.BLOB AS BLOB CCSID 1208 ENCODING 273);
+			SET PoType = SUBSTRING(Indata_Blob FROM 1 FOR 4);
+			SET st_po = CAST(PoType AS CHARACTER CCSID 1208 ENCODING 273);
+			SET BlobTOChar=CAST(Indata_Blob AS CHARACTER CCSID 1208 ENCODING 273);
+			SET temp2=LENGTH(BlobTOChar);
+			SET repeat1=CEILING(temp2/260);
+
+			while (startpois<=repeat1) DO
+				
+				IF ( st_po = SUBSTRING(BlobTOChar from start FOR 4)) THEN
+				
+				SET temp3=SUBSTRING(BlobTOChar from start+4 FOR 256);
+				SET temp4=temp4||temp3;
+				SET startpois=startpois+1;
+			    SET start=start+260;
+			    
+			    ELSE 
+			    SET PoType = CAST(st_po AS BLOB CCSID 1208 ENCODING 273);	
+			    SET OutputRoot.Properties =  Environment.Properties;
+			    SET OutputRoot.BLOB.BLOB=PoType||CAST(temp4 AS BLOB CCSID 1208 ENCODING 273);
+			    SET st_po = SUBSTRING(BlobTOChar from start FOR 4);
+			 --   SET st_po = CAST(PoType AS CHARACTER CCSID 1208 ENCODING 273);
+			    SET temp3='';
+			    SET temp4='';
+			    PROPAGATE TO TERMINAL 'out';
+		--	    SET startpois=startpois-1;
+			    
+			    END IF;	
+			    
+			end while;
+			SET PoType = CAST(st_po AS BLOB CCSID 1208 ENCODING 273);
+		    SET OutputRoot.Properties =  Environment.Properties;
+			SET OutputRoot.BLOB.BLOB=PoType||CAST(temp4 AS BLOB CCSID 1208 ENCODING 273);
+			RETURN TRUE;
+	
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;

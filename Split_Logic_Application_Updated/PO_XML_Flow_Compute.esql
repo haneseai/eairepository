@@ -1,0 +1,81 @@
+
+CREATE COMPUTE MODULE PO_XML_Flow_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+
+		 CALL CopyMessageHeaders();
+		 
+		 DECLARE storeverify INTEGER;
+
+	--	Set Environment.Store = SUBSTRING( InputRoot.DFDL.Transaction_Splitting.body[1].Transaction FROM 1 FOR 4);
+	/*     IF ( InputRoot.MQMD.Priority = 9) THEN
+	      SET OutputRoot.MQMD.Priority=9; 
+		  SET OutputRoot.MQMD.Format = MQFMT_STRING; 
+		  SET OutputRoot.MQMD.Feedback=MQFB_APPL_LAST;
+		  Propagate to terminal 'out';
+	     END IF; */
+		
+		Set Environment.Store = SUBSTRING( InputRoot.DFDL.Transaction_Splitting.body.Transaction[1] FROM 1 FOR 4);
+        IF LENGTH(trim(Environment.Store)) < 4 THEN
+		         THROW USER EXCEPTION CATALOG 'BIPmsgs' MESSAGE 
+                 2951 VALUES('Record length should not be 1') ;
+		
+		END IF;
+		
+		DECLARE firsthdr REFERENCE TO InputRoot.DFDL.Transaction_Splitting.body.Transaction[1];
+		
+		SET storeverify =  LEFT(firsthdr,4);
+		
+		SET firsthdr = SUBSTRING ( firsthdr FROM 5);
+				
+		IF ( Environment.Store = storeverify) THEN
+			
+	    SET firsthdr = firsthdr||','||Environment.Store;
+		SET OutputRoot.Properties = InputRoot.Properties;
+		SET OutputRoot.BLOB."BLOB" = CAST(firsthdr AS BLOB CCSID 819);
+		
+		PROPAGATE TO  TERMINAL 'out'; 
+        
+         
+		END IF; 
+		 
+	
+		 
+       
+	--    DECLARE recd REFERENCE TO InputRoot.DFDL.Transaction_Splitting.body[2];
+
+	    DECLARE recd REFERENCE TO InputRoot.DFDL.Transaction_Splitting.body.Transaction[2];
+		
+		WHILE LASTMOVE(recd)= TRUE  Do
+			
+		SET recd = recd||','||Environment.Store;
+		SET OutputRoot.Properties = InputRoot.Properties;
+		SET OutputRoot.BLOB."BLOB" = CAST(recd AS BLOB CCSID 819);
+			
+			PROPAGATE TO  TERMINAL 'out'; 
+		
+			MOVE recd NEXTSIBLING;
+		END WHILE ;
+	    
+		
+		RETURN FALSE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;
+
+
+
+

@@ -1,0 +1,54 @@
+
+
+CREATE COMPUTE MODULE SAP_STINDATA_POS_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		-- CALL CopyMessageHeaders();
+		-- CALL CopyEntireMessage();
+					
+		DECLARE InFileName,InFileLoc CHARACTER '';
+        SET InFileName = InputLocalEnvironment.File.Name;
+        SET InFileLoc  = InputLocalEnvironment.File.Directory;
+		SET OutputRoot.XMLNSC.Email.Email_Type = 'Initiation';
+		SET OutputRoot.XMLNSC.Email.InFileName = InFileName;
+		SET OutputRoot.XMLNSC.Email.InFileLoc  = InFileLoc;
+		IF ( InputLocalEnvironment.File.Record = 1) THEN
+		PROPAGATE TO LABEL 'Email' ;
+		END IF;
+		
+		CALL CopyMessageHeaders();
+		CALL CopyEntireMessage();
+		SET OutputLocalEnvironment.Destination.File.Directory = '/app/pos/ToPOS';
+		
+		
+        SET OutputLocalEnvironment.Destination.File.Name  = InFileName;
+       
+		       
+		PROPAGATE TO TERMINAL 'out';
+		       
+
+	/*	
+		SET OutputRoot.XMLNSC.Email.Email_Type  = 'Success';
+		SET OutputRoot.XMLNSC.Email.OutFileName = InputLocalEnvironment.File.Name;
+		SET OutputRoot.XMLNSC.Email.OutFileLoc  = '/app/pos/ToPOS';*/
+
+	--	PROPAGATE TO LABEL 'Email';
+		
+		RETURN FALSE;
+		
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;

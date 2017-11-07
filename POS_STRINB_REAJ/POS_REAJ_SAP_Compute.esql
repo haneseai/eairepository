@@ -1,0 +1,57 @@
+
+
+CREATE COMPUTE MODULE POS_REAJ_SAP_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+			
+		DECLARE InFileName,InFileLoc CHARACTER '';
+        SET InFileName = InputLocalEnvironment.File.Name;
+        SET InFileLoc  = InputLocalEnvironment.File.Directory;
+		SET OutputRoot.XMLNSC.Email.Email_Type = 'Initiation';
+		SET OutputRoot.XMLNSC.Email.InFileName = InFileName;
+		SET OutputRoot.XMLNSC.Email.InFileLoc  = InFileLoc;
+		
+		
+	    IF ( InputLocalEnvironment.File.Record = 1) THEN
+
+	    PROPAGATE TO LABEL 'Email' ;
+	    END IF;
+		
+		DECLARE Time_St,time_st1 CHARACTER;
+		Declare time_st2 TIMESTAMP ;
+		
+		SET time_st1 = SUBSTRING(InputLocalEnvironment.File.TimeStamp FROM 1 FOR 15);
+		SET time_st2 = CAST(time_st1 AS GMTTIMESTAMP FORMAT 'YYYYMMdd_HHmmss');
+		SET Time_St =  CAST(time_st2 AS CHARACTER FORMAT 'yyyyMMdd_HHmmss');
+		
+		
+		CALL CopyMessageHeaders();
+		CALL CopyEntireMessage();
+		SET OutputLocalEnvironment.Destination.File.Directory = '/app/wricef/sd/data/xi/ib/pos/ejournal';
+		
+        SET OutputLocalEnvironment.Destination.File.Name  = SUBSTRING( InputLocalEnvironment.File.Name BEFORE '.')||'_'||Time_St||'.'||SUBSTRING( InputLocalEnvironment.File.Name AFTER '.');
+		PROPAGATE TO TERMINAL 'out';
+		
+	--	SET OutputRoot.XMLNSC.Email.Email_Type  = 'Success';
+	--	SET OutputRoot.XMLNSC.Email.OutFileName = InputLocalEnvironment.File.Name;
+	--	SET OutputRoot.XMLNSC.Email.OutFileLoc  = '/app/wricef/sd/data/xi/ib/pos';
+	--	PROPAGATE TO LABEL 'Email';
+		RETURN FALSE;
+		
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;
+

@@ -1,0 +1,49 @@
+
+
+
+
+CREATE COMPUTE MODULE ESBDIC_Converter_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		-- CALL CopyMessageHeaders();
+		-- CALL CopyEntireMessage();
+		
+		DECLARE InFileName,InFileLoc CHARACTER '';
+        SET InFileName = InputLocalEnvironment.File.Read.Name;
+        SET InFileLoc  = InputLocalEnvironment.File.Read.Directory;
+		SET OutputRoot.XMLNSC.Email.Email_Type = 'Initiation';
+		SET OutputRoot.XMLNSC.Email.InFileName = InFileName;
+		SET OutputRoot.XMLNSC.Email.InFileLoc  = InFileLoc;
+		PROPAGATE TO LABEL 'Email' ;
+		
+		DECLARE myOutChar1208 CHARACTER '';
+		DECLARE myOutChar500 BLOB;
+		DECLARE myOutBlob1208 BLOB;
+		SET myOutBlob1208=CAST(InputRoot.BLOB.BLOB AS BLOB CCSID 1208 ENCODING 273);
+--		SET myOutBlob1208=REPLACE(myOutBlob1208,X'00',X'f07af27af4f3f2f57a');
+		SET myOutChar1208=CAST(myOutBlob1208 AS CHARACTER CCSID 500 ENCODING 785);
+		SET OutputRoot.BLOB.BLOB = CAST (myOutChar1208 AS BLOB CCSID 1208 ENCODING 273);
+		RETURN TRUE;
+        
+        
+--        DECLARE a CHARACTER '';
+--        set a = CAST(InputRoot.BLOB.BLOB AS CHARACTER CCSID 1208 Encoding 815);
+--        set OutputRoot.BLOB.BLOB = REPLACE(CAST (a AS BLOB CCSID 1208 ENCODING 273),X'00',X'7375');
+--        set a = REPLACE(a,NULL,'sudheer');
+--        set OutputRoot.BLOB.BLOB = CAST (a AS BLOB CCSID 1208 ENCODING 273);
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;

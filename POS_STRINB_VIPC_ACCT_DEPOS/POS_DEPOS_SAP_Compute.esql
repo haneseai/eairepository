@@ -1,0 +1,57 @@
+
+
+CREATE COMPUTE MODULE POS_DEPOS_SAP_Compute
+
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+		BEGIN
+		
+	    DECLARE InFileName,InFileLoc CHARACTER '';
+        SET InFileName = InputLocalEnvironment.File.Name;
+        SET InFileLoc  = InputLocalEnvironment.File.Directory;
+        
+		SET OutputRoot.XMLNSC.Email.Email_Type = 'Initiation';
+		
+		SET OutputRoot.XMLNSC.Email.InFileName = InFileName;
+		SET OutputRoot.XMLNSC.Email.InFileLoc  = InFileLoc;
+	    
+	    IF ( InputLocalEnvironment.File.Record = 1) THEN
+	    PROPAGATE TO LABEL 'Email' ;
+	    END IF;
+		
+		
+		DECLARE MessageChar,storeNo CHARACTER '';
+        DECLARE MessageBlob BLOB;
+        SET MessageBlob = ASBITSTREAM(InputBody, 546, 1208, , , , EmbeddedBitStream);
+     --   SET MessageChar = CAST(MessageBlob AS CHARACTER CCSID 430 ENCODING 506);
+	    SET MessageChar = CAST(MessageBlob AS CHARACTER CCSID 437 ENCODING 546);
+	    SET storeNo =  LEFT(MessageChar,4);
+		
+		CALL CopyMessageHeaders();
+		CALL CopyEntireMessage();
+		
+		DECLARE Time_St CHARACTER  CAST(CURRENT_TIMESTAMP AS CHARACTER FORMAT 'yyyyMMddHHmmssSSS');
+		
+		SET OutputLocalEnvironment.Destination.File.Directory = '/app/wricef/sd/data/xi/ib/pos';
+        SET OutputLocalEnvironment.Destination.File.Name  = 'DEPOS'||'_'||storeNo||'_'||Time_St||'.DAT';
+		PROPAGATE TO TERMINAL 'out';
+	
+		RETURN FALSE;
+
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;
+
+

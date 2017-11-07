@@ -1,0 +1,582 @@
+DECLARE ns NAMESPACE 'http://GLB/SD/POS/in/SalesData';
+
+CREATE COMPUTE MODULE POS_XML_TRANSACTION_LEVEL_Compute
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		
+	 CALL CopyMessageHeaders();
+		
+		-- Header Variable
+		
+		
+		DECLARE Beginn,Ddate,GrossMinus,GrossPlus,HeaderIndicator0,HeaderIndicator1,InactiveTime,NetCash,NetCashEnd,NetNonCashTotal,
+                NonSalesTimes,OperatorNum,Passw,RawValue,RegisterNum,Store,TenderTime,Ttime,TotalRingTime,TranNum,TranType,TranTypePD,headerrowdata,TTerminal,OOperatorNum,TTranNum,Odate,Otime CHARACTER ;
+                 
+         -- ItemList Variable        
+		      
+		DECLARE AllowanceAmount,Currency,Department,DiscountAmount,HeaderItemFlag,ItemType,Quantity,SalesAmount,SalesIndicator0,SalesIndicator1,SalesTaxPlan,Upc,ItemCount,
+		MultiPricingGroup,PriceOverwrite,UnitPrice,QuantityOverwrite,AllowanceIndicator0,AllowanceTaxCode,VipNumber,DiscountCode,DiscountIndicator0,DiscountPercentage,CashString,
+		TenderAccountStatus,TenderAmount,TenderFaceValue,TenderIndicator0,TenderMaskedAccount,TaxAAmount,TaxBAmount,TaxCAmount,TaxDAmount,TenderType,TaxIndicator0,GoalEntry,hdrstr,ApprovalCode,Approved,ChasePaymentInfo,ChasePaymentInfo2,SwipeSource,AuthorizationSource,ExpirationDate,CardLevel,CardType CHARACTER;      
+		
+		-- Functinal Variable
+		
+		Declare originString1,required_string,Decide_Hdr_itm_Chr,Decide_Hdr_itm CHARACTER;
+	    Declare Counter,Required_Length,Total_Length,test3,pos1,pos2,AllowanceAmt,DiscountAmt,itemCounter,Header_Available INTEGER;
+	    Declare Iloop Integer ;
+	    SET itemCounter =0;
+	    SET Header_Available = 0;
+
+        -- Capturing first four digit(Store Number) from the file 
+        
+		Set Environment.Store = SUBSTRING( InputRoot.DFDL.DFDLTSK.record.field1[<] FROM 1 FOR 4);
+		
+		
+           IF LENGTH(trim(Environment.Store)) < 4 THEN
+		         THROW USER EXCEPTION CATALOG 'BIPmsgs' MESSAGE 
+                 2951 VALUES('Record length should not be 1') ;
+		   END IF;
+       
+		
+
+		DECLARE recd REFERENCE TO InputRoot.DFDL.DFDLTSK.record.field1[1];
+		
+		
+		SET headerrowdata = recd;
+	    CREATE FIELD Environment.XMLNSC.ns:DT_DTC_POS_SALES.Transaction ;
+	    
+	    DECLARE recd_sec REFERENCE TO InputRoot.DFDL.DFDLTSK.record.field1[2];
+	    DECLARE lstran REFERENCE TO Environment.XMLNSC.ns:DT_DTC_POS_SALES.Transaction;
+	    
+	    WHILE LASTMOVE(recd_sec)= TRUE  Do
+	    	
+	    IF ( recd_sec <> Environment.Store) THEN	
+	    SET headerrowdata = headerrowdata || ',' || recd_sec ;
+	    END IF;
+	    
+	    MOVE recd_sec NEXTSIBLING;
+	    
+		-- Ignore if the transaction is having only one itemtype
+		END WHILE ;
+
+		-- Loop for each transaction
+		
+	  WHILE LASTMOVE(recd)= TRUE  Do
+			  
+			  
+			  IF ( recd <> Environment.Store) THEN
+			  
+			  
+			    
+			  If ((SUBSTRING(recd BEFORE ':') = 0)) THEN
+			  	 	 			  	 	
+			 	-- Creating header xml tag for itemtype 0
+			 	     --CREATE LASTCHILD OF lstran.listTran[<] NAME 'header';
+			 	     --Declare hdr REFERENCE TO lstran.listTran[<].header[<];	
+			 	       	 
+			 	       	 
+			 	       CREATE LASTCHILD OF lstran NAME 'header';
+			 	       Declare hdr REFERENCE TO lstran.header[<];	 
+			 
+			 	       SET Ddate = SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 11)+1 FOR ( POSITION (':' IN recd REPEAT 12) - POSITION (':' IN recd REPEAT 11 ))-1);
+			 	       SET GrossMinus= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 7)+1 FOR ( POSITION (':' IN recd REPEAT 8) - POSITION (':' IN recd REPEAT 7))-1);
+		               SET GrossPlus= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 6)+1 FOR ( POSITION (':' IN recd REPEAT 7) - POSITION (':' IN recd REPEAT 6))-1);
+		               SET HeaderIndicator0= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 13)+1 FOR ( POSITION (':' IN recd REPEAT 14) - POSITION (':' IN recd REPEAT 13))-1);
+		               SET HeaderIndicator1= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 14)+1 FOR ( POSITION (':' IN recd REPEAT 15) - POSITION (':' IN recd REPEAT 14))-1);
+		               SET InactiveTime= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 18)+1 FOR ( POSITION (':' IN recd REPEAT 19) - POSITION (':' IN recd REPEAT 18))-1);
+		               SET NetCash= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 8)+1 FOR ( POSITION (':' IN recd REPEAT 9) - POSITION (':' IN recd REPEAT 8))-1);
+		        --     SET NetCashEnd= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 18)+1 FOR ( POSITION (':' IN recd REPEAT 19) - POSITION (':' IN recd REPEAT 18))-1);
+		               SET NetCashEnd= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 19)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 19)));
+		               SET NetNonCashTotal= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 9)+1 FOR ( POSITION (':' IN recd REPEAT 10) - POSITION (':' IN recd REPEAT 9))-1);
+		               SET NonSalesTimes= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 17)+1 FOR ( POSITION (':' IN recd REPEAT 18) - POSITION (':' IN recd REPEAT 17))-1);
+		               SET OperatorNum= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 2)+1 FOR ( POSITION (':' IN recd REPEAT 3) - POSITION (':' IN recd REPEAT 2))-1);
+		               SET Passw= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 10)+1 FOR ( POSITION (':' IN recd REPEAT 11) - POSITION (':' IN recd REPEAT 10))-1);
+		               SET RawValue= recd;
+		               SET RegisterNum= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 1)+1 FOR ( POSITION (':' IN recd REPEAT 2) - POSITION (':' IN recd REPEAT 1))-1);
+		               SET Store= Environment.Store ;
+		               SET TenderTime= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 16)+1 FOR ( POSITION (':' IN recd REPEAT 17) - POSITION (':' IN recd REPEAT 16))-1);
+		               SET Ttime= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 12)+1 FOR ( POSITION (':' IN recd REPEAT 13) - POSITION (':' IN recd REPEAT 12))-1);
+		               SET TotalRingTime= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 15)+1 FOR ( POSITION (':' IN recd REPEAT 16) - POSITION (':' IN recd REPEAT 15))-1);
+		               SET TranNum= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+		               SET TranType= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( POSITION (':' IN recd REPEAT 5) - POSITION (':' IN recd REPEAT 4))-1);
+		               SET TranTypePD= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 5)+1 FOR ( POSITION (':' IN recd REPEAT 6) - POSITION (':' IN recd REPEAT 5))-1);	  
+			  	 
+			  	 
+				  	   SET hdr.begin = 0 ;
+				  	   SET hdr.date = Ddate ;
+				  	   SET hdr.grossMinus = GrossMinus ;
+				  	   SET hdr.grossplus = GrossPlus ;
+				  	   SET hdr.headerIndicator0 = HeaderIndicator0 ;
+				  	   SET hdr.headerIndicator1 = HeaderIndicator1;
+				  	   SET hdr.inactiveTime = InactiveTime ;
+				  	   SET hdr.netCash = NetCash ;
+				  	   SET hdr.netCashEnd = NetCashEnd ;
+				  	   SET hdr.netNonCashTotal = NetNonCashTotal ;
+				  	   SET hdr.nonSalesTimes = NonSalesTimes ;
+				  	   SET hdr.operatorNum  = OperatorNum;
+				  	   SET hdr.passw = Passw;
+				  	   SET hdr.rawValue = RawValue;
+				  	   SET hdr.registerNum = RegisterNum;
+				  	   SET hdr.store = Store;
+				  	   SET hdr.tenderTime = TenderTime;
+				  	   SET hdr.time = Ttime;
+				  	   SET hdr.totalRingTime =TotalRingTime;
+				  	   SET hdr.tranNum = TranNum;
+				  	   SET hdr.tranType = TranType;
+				  	   SET hdr.tranTypePD = TranTypePD; 
+				  	   
+				  	   SET Header_Available = 1 ;
+			       
+			       
+		       ELSEIF ((SUBSTRING(recd BEFORE ':') = 6)) THEN
+			   	    
+			   	    SET itemCounter = itemCounter +1 ;
+			  --	    CREATE LASTCHILD OF lstran.listTran.header[<] NAME 'item';
+			 --	    Declare hdr REFERENCE TO lstran.listTran.header[<].item[itemCounter];	
+			 
+			         CREATE LASTCHILD OF lstran.header[<] NAME 'item';
+			 	     Declare hdr REFERENCE TO lstran.header[<].item[itemCounter];
+			 	       	 
+	                 SET AllowanceAmount= 0;
+		             SET Currency= 'USD';
+		             SET Department= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 2)+1 FOR ( POSITION (':' IN recd REPEAT 3) - POSITION (':' IN recd REPEAT 2))-1);
+		             SET DiscountAmount= 0; 
+		             SET HeaderItemFlag= 'I';
+		             SET ItemType = SUBSTRING(recd BEFORE ':');
+		             SET Quantity= 1;
+		             SET RawValue= recd;
+		             SET SalesAmount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+		             SET SalesIndicator0= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 5)+1 FOR ( POSITION (':' IN recd REPEAT 6) - POSITION (':' IN recd REPEAT 5))-1);
+		           -- SET SalesIndicator1= SUBSTRING(fid FROM POSITION (':' IN fid REPEAT 5)+1 FOR ( POSITION (':' IN fid REPEAT 6) - POSITION (':' IN fid REPEAT 5))-1);
+		             SET SalesIndicator1= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 6)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 6)));
+		             SET SalesTaxPlan= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( POSITION (':' IN recd REPEAT 5) - POSITION (':' IN recd REPEAT 4))-1);
+		             SET Upc= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 1)+1 FOR ( POSITION (':' IN recd REPEAT 2) - POSITION (':' IN recd REPEAT 1))-1);
+		            
+			  	     SET hdr.allowanceAmount =AllowanceAmount;
+			  	     SET hdr.currency = Currency ;
+			  	     SET hdr.department = Department ;
+		     	     SET hdr.discountAmount = DiscountAmount ;
+			  	     SET hdr.headerItemFlag = HeaderItemFlag ;
+			  	     SET hdr.itemType = ItemType;
+			  	     SET hdr.quantity = Quantity;
+			  	     SET hdr.rawValue = RawValue ;
+			  	     SET hdr.salesAmount = SalesAmount ;
+			  	     SET hdr.salesIndicator0 = SalesIndicator0 ;
+			  	     SET hdr.salesIndicator1 = SalesIndicator1 ;
+			  	     SET hdr.salesTaxPlan  = SalesTaxPlan;
+			  	     SET hdr.upc = Upc; 
+			  	
+			   
+			   
+		     ELSEIF (SUBSTRING(recd BEFORE ':') = 7) THEN
+				        	
+	             --    CREATE LASTCHILD OF lstran.listTran.header.item[itemCounter] NAME 'itemOverWrite';
+				 --	 Declare hdr REFERENCE TO lstran.listTran.header.item[itemCounter].itemOverWrite[<];	
+				 	       	 
+				 	 CREATE LASTCHILD OF lstran.header.item[itemCounter] NAME 'itemOverWrite';
+				 	 Declare hdr REFERENCE TO lstran.header.item[itemCounter].itemOverWrite[<];      	 
+				 	       	 
+				     SET HeaderItemFlag= 'I';
+					 SET ItemCount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+					 SET ItemType= SUBSTRING(recd BEFORE ':');
+					 SET MultiPricingGroup= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 1)+1 FOR ( POSITION (':' IN recd REPEAT 2) - POSITION (':' IN recd REPEAT 1))-1);
+					 SET PriceOverwrite= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 5)+1 FOR ( POSITION (':' IN recd REPEAT 6) - POSITION (':' IN recd REPEAT 5))-1);
+					 SET Quantity = 1;
+			--		 SET QuantityOverwrite= SUBSTRING(fid FROM POSITION (':' IN fid REPEAT 5)+1 FOR ( POSITION (':' IN fid REPEAT 6) - POSITION (':' IN fid REPEAT 5))-1);
+					 SET QuantityOverwrite= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 6)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 6)));
+					 SET RawValue= recd;
+					 SET UnitPrice= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( POSITION (':' IN recd REPEAT 5) - POSITION (':' IN recd REPEAT 4))-1);
+							             
+					 SET hdr.headerItemFlag =HeaderItemFlag;
+					 SET hdr.itemCount = ItemCount ;
+					 SET hdr.itemType = ItemType ;
+					 SET hdr.multiPricingGroup =MultiPricingGroup ;
+					 SET hdr.priceOverwrite =PriceOverwrite ;
+					 SET hdr.quantity =Quantity;
+					 SET hdr.quantityOverwrite = QuantityOverwrite;
+					 SET hdr.rawValue = RawValue ;
+					 SET hdr.unitPrice = UnitPrice ;
+			           
+		      
+		        
+		     ELSEIF (SUBSTRING(recd BEFORE ':') = 8) THEN
+		        	 
+		     --   	 CREATE LASTCHILD OF lstran.listTran.header.item[itemCounter] NAME 'itemAllow';
+			--	 	 Declare hdr REFERENCE TO lstran.listTran.header.item[itemCounter].itemAllow[<];	
+								        
+				     CREATE LASTCHILD OF lstran.header.item[itemCounter] NAME 'itemAllow';
+				 	 Declare hdr REFERENCE TO lstran.header.item[itemCounter].itemAllow[<];	
+								        
+								 	       	 
+					 SET AllowanceAmount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 2)+1 FOR ( POSITION (':' IN recd REPEAT 3) - POSITION (':' IN recd REPEAT 2))-1);
+				--	 SET AllowanceIndicator0= SUBSTRING(fid FROM POSITION (':' IN fid REPEAT 3)+1 FOR ( POSITION (':' IN fid REPEAT 4) - POSITION (':' IN fid REPEAT 3))-1);
+					 SET AllowanceIndicator0= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 4)));
+					 SET AllowanceTaxCode= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+					 SET Currency= 'USD';
+					 SET HeaderItemFlag= 'I';
+					 SET ItemType = SUBSTRING(recd BEFORE ':');
+					 SET RawValue= recd;
+					         
+					 SET hdr.allowanceAmount =AllowanceAmount;
+					 SET hdr.allowanceIndicator0 = AllowanceIndicator0;
+					 SET hdr.allowanceTaxCode = AllowanceTaxCode ;
+					 SET hdr.currency =Currency ;
+					 SET hdr.headerItemFlag =HeaderItemFlag ;
+					 SET hdr.itemType =ItemType;
+					 SET hdr.rawValue = RawValue ;   
+			           
+		
+			     
+			  ELSEIF ((SUBSTRING(recd BEFORE ':') = 9)) THEN
+			  	
+			  --	     CREATE LASTCHILD OF lstran.listTran[<] NAME 'headerGoals';
+			 --	     Declare hdr REFERENCE TO lstran.listTran[<].headerGoals[<];	
+			  	 	 			  	 	
+			  	 	 			  	 	
+			  	 	 CREATE LASTCHILD OF lstran NAME 'headerGoals';
+			 	     Declare hdr REFERENCE TO lstran.headerGoals[<];			  	 	
+			 	
+			 	--     CREATE LASTCHILD OF lstran.listTran.header[<] NAME 'headerGoals';
+			 	 --    Declare hdr REFERENCE TO lstran.listTran.header[<].headerGoals[<];
+			 	     
+			 	      IF ( (SUBSTRING (SUBSTRING(recd AFTER ':') FROM 1 FOR 1 )) = 'F') THEN
+			 	       	 
+	                     SET HeaderItemFlag= 'I';
+		                 SET ItemType = SUBSTRING(recd BEFORE ':');
+		                 SET RawValue= recd;
+		                 SET VipNumber = SUBSTRING(recd AFTER ':');
+		             
+			  	         SET hdr.headerItemFlag =HeaderItemFlag;
+			  	         SET hdr.itemType =ItemType;
+			  	         SET hdr.rawValue = RawValue ;
+			  	         SET hdr.vipNumber = VipNumber ;
+			  	     
+			  	     
+		              ELSEIF ( (SUBSTRING (SUBSTRING(recd AFTER ':') FROM 1 FOR 1 )) = 'G') THEN
+			  	     
+			  	         SET GoalEntry= SUBSTRING(recd AFTER ':');
+                         SET HeaderItemFlag= 'I';
+		                 SET ItemType = SUBSTRING(recd BEFORE ':');
+		                 SET RawValue= recd;
+		           
+		             
+			  	         SET hdr.goalsEntry=GoalEntry;
+			  	         SET hdr.headerItemFlag =HeaderItemFlag;
+			  	         SET hdr.itemType =ItemType;
+			  	         SET hdr.rawValue = RawValue ;
+			  
+			          END IF;
+			     
+			  			     
+			     
+			     
+			  ELSEIF (SUBSTRING(recd BEFORE ':') = 10) THEN
+			     	
+			     	 SET DiscountIndicator0= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 4)));
+			     	 
+			     	 SET Decide_Hdr_itm = CAST (RIGHT(DiscountIndicator0,1) AS CHARACTER);
+			  --   	 SET Decide_Hdr_itm_Chr = CAST(Decide_Hdr_itm as CHARACTER);
+			     	 
+			     	IF (Decide_Hdr_itm = '0' or Decide_Hdr_itm = '1' or Decide_Hdr_itm = '2' or Decide_Hdr_itm = '3' or Decide_Hdr_itm = '4' or Decide_Hdr_itm = '5' or Decide_Hdr_itm = '6' or Decide_Hdr_itm = '7' ) THEN 
+					 
+					   	-- CREATE LASTCHILD OF lstran.listTran.header.item[itemCounter] NAME 'itemDiscount';
+				 	    -- Declare hdr REFERENCE TO lstran.listTran.header.item[itemCounter].itemDiscount[<];	
+				 	     
+				 	     CREATE LASTCHILD OF lstran.header.item[itemCounter] NAME 'itemDiscount';
+				 	     Declare hdr REFERENCE TO lstran.header.item[itemCounter].itemDiscount[<];	
+				 	     
+				 	     SET Currency= 'USD';
+					     SET DiscountAmount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 2)+1 FOR ( POSITION (':' IN recd REPEAT 3) - POSITION (':' IN recd REPEAT 2))-1);
+					     SET DiscountCode= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 1)+1 FOR ( POSITION (':' IN recd REPEAT 2) - POSITION (':' IN recd REPEAT 1))-1);
+			--		     SET DiscountIndicator0= SUBSTRING(fid FROM POSITION (':' IN fid REPEAT 3)+1 FOR ( POSITION (':' IN fid REPEAT 4) - POSITION (':' IN fid REPEAT 3))-1);
+				         SET DiscountIndicator0= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 4)));
+					     SET DiscountPercentage= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+					     SET HeaderItemFlag= 'I';
+					     SET ItemType= SUBSTRING(recd BEFORE ':');
+					     SET RawValue= recd;
+							             
+					     SET hdr.currency =Currency;
+					     SET hdr.discountAmount = DiscountAmount;
+					     SET hdr.discountCode = DiscountCode ;
+					     SET hdr.discountIndicator0 =DiscountIndicator0 ;
+					     SET hdr.discountPercentage =DiscountPercentage ;
+					     SET hdr.headerItemFlag =HeaderItemFlag;
+					     SET hdr.itemType =ItemType;
+					     SET hdr.rawValue= RawValue ;
+					 
+					     ELSEIF Decide_Hdr_itm IN ( '8' ,'9','A','B','C','D','E','F' ) THEN
+			      	    --  CREATE LASTCHILD OF lstran.listTran[<] NAME 'headerDiscount';
+			 	        --  Declare hdr REFERENCE TO lstran.listTran[<].headerDiscount[<];
+			 	          
+			 	          CREATE LASTCHILD OF lstran NAME 'headerDiscount';
+			 	          Declare hdr REFERENCE TO lstran.headerDiscount[<];
+			     	 	
+			   --  	      CREATE LASTCHILD OF lstran.listTran.header[<] NAME 'headerDiscount';
+			 	--          Declare hdr REFERENCE TO lstran.listTran.header[<].headerDiscount[<];	
+			 	          
+					 	  SET Currency= 'USD';
+						  SET DiscountAmount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 2)+1 FOR ( POSITION (':' IN recd REPEAT 3) - POSITION (':' IN recd REPEAT 2))-1);
+						  SET DiscountCode= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 1)+1 FOR ( POSITION (':' IN recd REPEAT 2) - POSITION (':' IN recd REPEAT 1))-1);
+					--	 SET DiscountIndicator0= SUBSTRING(fid FROM POSITION (':' IN fid REPEAT 3)+1 FOR ( POSITION (':' IN fid REPEAT 4) - POSITION (':' IN fid REPEAT 3))-1);
+					      SET DiscountIndicator0= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 4)));
+						  SET DiscountPercentage= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+						  SET HeaderItemFlag= 'I';
+						  SET ItemType= SUBSTRING(recd BEFORE ':');
+						  SET RawValue= recd;
+									             
+						  SET hdr.currency =Currency;
+						  SET hdr.discountAmount = DiscountAmount;
+						  SET hdr.discountCode = DiscountCode ;
+						  SET hdr.discountIndicator0 =DiscountIndicator0 ;
+						  SET hdr.discountPercentage =DiscountPercentage ;
+						  SET hdr.headerItemFlag =HeaderItemFlag;
+						  SET hdr.itemType =ItemType;
+						  SET hdr.rawValue= RawValue ;
+						  
+	
+					 
+			     	 END IF ;
+			     	 
+			   	ELSEIF ((SUBSTRING(recd BEFORE ':') = 11)) THEN
+			  	 	 			  	 	
+			  	 	 			  	 	
+			  	--       CREATE LASTCHILD OF lstran.listTran[<] NAME 'headerCash';
+			 	 --      Declare hdr REFERENCE TO lstran.listTran[<].headerCash[<];	
+			 	       
+			 	       
+			 	       CREATE LASTCHILD OF lstran NAME 'headerCash';
+			 	       Declare hdr REFERENCE TO lstran.headerCash[<]; 			  	 	
+			 		
+			 	 --     CREATE LASTCHILD OF lstran.listTran.header[<] NAME 'headerCash';
+			 	  --    Declare hdr REFERENCE TO lstran.listTran.header[<].headerCash[<];		
+			 	       	 
+	                  SET CashString= SUBSTRING(recd AFTER ':');
+		              SET HeaderItemFlag= 'I';
+		              SET ItemType= SUBSTRING(recd BEFORE ':');
+		              SET RawValue= recd;
+		             
+			  	      SET hdr.cashString =CashString;
+			  	      SET hdr.headerItemFlag = HeaderItemFlag;
+			  	      SET hdr.itemType = ItemType ;
+		     	      SET hdr.rawValue =RawValue ;
+		     	   
+		     	ELSEIF ((SUBSTRING(recd BEFORE ':') = 12)) THEN
+			  	 
+			  	 
+			  	 --       CREATE LASTCHILD OF lstran.listTran[<] NAME 'headerTender';
+			 	  --     Declare hdr REFERENCE TO lstran.listTran[<].headerTender[<];	
+			 	       
+			 	       
+			 	       
+			  	        CREATE LASTCHILD OF lstran NAME 'headerTender';
+			 	       Declare hdr REFERENCE TO lstran.headerTender[<];	
+			  	 
+			 	--     CREATE LASTCHILD OF lstran.listTran.header[<] NAME 'headerTender';
+			 	--      Declare hdr REFERENCE TO lstran.listTran.header[<].headerTender[<];		
+			 	   
+			 	       	 
+	                  SET Currency= 'USD';
+		              SET HeaderItemFlag= 'I';
+		              SET ItemType= SUBSTRING(recd BEFORE ':');
+		              SET RawValue= recd;
+		              SET TenderAccountStatus= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( POSITION (':' IN recd REPEAT 5) - POSITION (':' IN recd REPEAT 4))-1);
+		              SET TenderAmount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 2)+1 FOR ( POSITION (':' IN recd REPEAT 3) - POSITION (':' IN recd REPEAT 2))-1);
+		              SET TenderFaceValue= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 7)+1 FOR ( POSITION (':' IN recd REPEAT 8) - POSITION (':' IN recd REPEAT 7))-1);
+		              SET TenderIndicator0= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 6)+1 FOR ( POSITION (':' IN recd REPEAT 7) - POSITION (':' IN recd REPEAT 6))-1);
+		              SET TenderMaskedAccount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+		              SET TenderType= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 1)+1 FOR ( POSITION (':' IN recd REPEAT 2) - POSITION (':' IN recd REPEAT 1))-1);
+		             
+			  	      SET hdr.currency =Currency;
+			  	      SET hdr.headerItemFlag = HeaderItemFlag;
+			  	      SET hdr.itemType =ItemType;
+			  	      SET hdr.rawValue= RawValue ;
+			  	      SET hdr.tenderAccountStatus = TenderAccountStatus ;
+		     	      SET hdr.tenderAmount =TenderAmount ;
+			  	      SET hdr.tenderFaceValue =TenderFaceValue;
+			  	      SET hdr.tenderIndicator0 =TenderIndicator0;
+			  	      SET hdr.tenderMaskedAccount =TenderMaskedAccount;
+			  	      SET hdr.tenderType= TenderType ;
+		     	      
+			   ELSEIF ((SUBSTRING(recd BEFORE ':') = 14)) THEN
+			  	 	 			  	 	
+				
+				   --  CREATE LASTCHILD OF lstran.listTran[<] NAME 'headerTax';
+			 	    -- Declare hdr REFERENCE TO lstran.listTran[<].headerTax[<];
+			 	     
+			 	     CREATE LASTCHILD OF lstran NAME 'headerTax';
+			 	     Declare hdr REFERENCE TO lstran.headerTax[<];
+				
+				
+			-- 	     CREATE LASTCHILD OF lstran.listTran.header[<] NAME 'headerTax';
+			-- 	     Declare hdr REFERENCE TO lstran.listTran.header[<].headerTax[<];		
+			 	       	 
+	                  SET Currency= 'USD';
+		              SET HeaderItemFlag= 'I';
+		              SET ItemType= SUBSTRING(recd BEFORE ':');
+		              SET RawValue= recd;
+		              SET TaxAAmount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 1)+1 FOR ( POSITION (':' IN recd REPEAT 2) - POSITION (':' IN recd REPEAT 1))-1);
+		              SET TaxBAmount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 2)+1 FOR ( POSITION (':' IN recd REPEAT 3) - POSITION (':' IN recd REPEAT 2))-1);
+		              SET TaxCAmount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+		              SET TaxDAmount= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( POSITION (':' IN recd REPEAT 5) - POSITION (':' IN recd REPEAT 4))-1);
+		         --  SET TaxIndicator0= SUBSTRING(fid FROM POSITION (':' IN fid REPEAT 4)+1 FOR ( POSITION (':' IN fid REPEAT 5) - POSITION (':' IN fid REPEAT 4))-1);
+		              SET TaxIndicator0= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 5)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 5)));
+		             
+			  	      SET hdr.currency =Currency;
+			  	      SET hdr.headerItemFlag = HeaderItemFlag;
+			  	      SET hdr.itemType =ItemType;
+			  	      SET hdr.rawValue= RawValue ;
+			  	      SET hdr.taxAAmount = TaxAAmount ;
+		     	      SET hdr.taxBAmount =TaxBAmount ;
+			  	      SET hdr.taxCAmount =TaxCAmount;
+			  	      SET hdr.taxDAmount =TaxDAmount;
+			  	      SET hdr.taxIndicator0 =TaxIndicator0;  
+			  	      
+			 ELSEIF ((SUBSTRING(recd BEFORE ':') = 15)) THEN
+			 	
+			-- 	  CREATE LASTCHILD OF lstran.listTran[<] NAME 'headerCard';
+			-- 	  Declare hdr REFERENCE TO lstran.listTran[<].headerCard[<];
+			 	  
+			 	  
+			 	  CREATE LASTCHILD OF lstran NAME 'headerCard';
+			 	  Declare hdr REFERENCE TO lstran.headerCard[<];
+                                                                     
+                          
+             --     CREATE LASTCHILD OF lstran.listTran.header[<] NAME 'headerCard';
+			 --	  Declare hdr REFERENCE TO lstran.listTran.header[<].headerCard[<];
+               	        
+		              SET originString1 = REPLACE ( recd, ':','' ) ;
+		              SET Counter =LENGTH(recd) - LENGTH(originString1); 
+                                          
+                      SET ApprovalCode= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 1)+1 FOR ( POSITION (':' IN recd REPEAT 2) - POSITION (':' IN recd REPEAT 1))-1);
+                      SET HeaderItemFlag= 'I';
+                      SET ItemType= SUBSTRING(recd BEFORE ':');
+                      SET RawValue= recd;
+                          
+                      SET Approved= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 2)+1 FOR ( POSITION (':' IN recd REPEAT 3) - POSITION (':' IN recd REPEAT 2))-1);
+                      SET ChasePaymentInfo= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+                      SET ChasePaymentInfo2= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( POSITION (':' IN recd REPEAT 5) - POSITION (':' IN recd REPEAT 4))-1);
+                      SET SwipeSource= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 5)+1 FOR ( POSITION (':' IN recd REPEAT 6) - POSITION (':' IN recd REPEAT 5))-1);
+                   --     SET AuthorizationSource= SUBSTRING(fid FROM POSITION (':' IN fid REPEAT 6)+1 FOR ( POSITION (':' IN fid REPEAT 7) - POSITION (':' IN fid REPEAT 6))-1);
+                    --    SET ExpirationDate= SUBSTRING(fid FROM POSITION (':' IN fid REPEAT 7)+1 FOR ( POSITION (':' IN fid REPEAT 8) - POSITION (':' IN fid REPEAT 7))-1);
+                           
+                           
+                        IF Counter = 7 THEN
+		                  SET AuthorizationSource='';
+		                ELSE	
+		                  SET AuthorizationSource= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 6)+1 FOR ( POSITION (':' IN recd REPEAT 7) - POSITION (':' IN recd REPEAT 6))-1);
+		               END IF;
+		             
+		                IF Counter = 7 THEN
+		                  SET ExpirationDate= trim(SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 6)+1 FOR ( POSITION (':' IN recd REPEAT 7) - POSITION (':' IN recd REPEAT 6))-1));
+		                ELSE	
+		                  SET ExpirationDate= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 7)+1 FOR ( POSITION (':' IN recd REPEAT 8) - POSITION (':' IN recd REPEAT 7))-1);
+		                END IF;
+		             
+		                IF Counter = 8 THEN
+                          SET CardLevel = COALESCE(SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 8)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 8))),NULL);
+                        ELSEIF Counter = 7 THEN
+                          SET CardLevel = '';	
+                        ELSE
+                          SET CardLevel= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 8)+1 FOR ( POSITION (':' IN recd REPEAT 9) - POSITION (':' IN recd REPEAT 8))-1);
+                        END IF;
+                           
+                        IF Counter = 9 THEN
+                          SET CardType= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 9)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 9)));
+                        ELSE
+                         SET CardType='';
+                        END IF;
+                        
+                         
+                      SET hdr.approvalCode =ApprovalCode;
+                      SET hdr.headerItemFlag = HeaderItemFlag;
+                      SET hdr.itemType =ItemType;
+                      SET hdr.rawValue= RawValue ;
+                      SET hdr.approved= Approved ;
+                      SET hdr.chasePaymentInfo = ChasePaymentInfo ;
+                      SET hdr.chasePaymentInfo2 =ChasePaymentInfo2 ;
+                      SET hdr.swipeSource =SwipeSource;
+                      SET hdr.authorizationSource =AuthorizationSource;
+                      SET hdr.expirationDate =ExpirationDate;
+                      SET hdr.cardLevel =CardLevel;
+                      SET hdr.cardType =CardType;     
+	  	  
+	  	  
+	  	  
+	  	         ELSEIF ((SUBSTRING(recd BEFORE ':') = 1)) THEN
+			  	 	 			  	 	
+				 	     
+			 	      CREATE LASTCHILD OF lstran NAME 'headerRentry';
+			 	      Declare hdr REFERENCE TO lstran.headerRentry[<];
+				
+				      SET ItemType= SUBSTRING(recd BEFORE ':');
+		              SET TTerminal= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 1)+1 FOR ( POSITION (':' IN recd REPEAT 2) - POSITION (':' IN recd REPEAT 1))-1);
+		              SET OOperatorNum = SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 2)+1 FOR ( POSITION (':' IN recd REPEAT 3) - POSITION (':' IN recd REPEAT 2))-1);
+		              SET TTranNum= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 3)+1 FOR ( POSITION (':' IN recd REPEAT 4) - POSITION (':' IN recd REPEAT 3))-1);
+		              SET Odate= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 4)+1 FOR ( POSITION (':' IN recd REPEAT 5) - POSITION (':' IN recd REPEAT 4))-1);
+		              SET Otime= SUBSTRING(recd FROM POSITION (':' IN recd REPEAT 5)+1 FOR ( LENGTH(recd) - POSITION (':' IN recd REPEAT 5)));
+		              SET RawValue= recd;
+		              
+			  	      SET hdr.itemType =ItemType;
+			  	      SET hdr.terminal= TTerminal ;
+			  	      SET hdr.operatorNum = OOperatorNum ;
+		     	      SET hdr.tranNum =TTranNum ;
+			  	      SET hdr.date =Odate;
+			  	      SET hdr.time =Otime;
+			  	      SET hdr.rawValue= RawValue ;
+			  	    
+			  	      
+			  	   END IF;      	 
+		
+					 
+			      
+			      
+			 END IF ; 
+			   	     
+			MOVE recd NEXTSIBLING;
+		-- Ignore if the transaction is having only one itemtype
+		END WHILE ;
+		
+		IF ( Header_Available = 1 ) THEN
+		
+	--	  CREATE LASTCHILD OF lstran.listTran[<] NAME 'headRawTransaction';
+	 --     Declare hdr REFERENCE TO lstran.listTran[<].headRawTransaction[<];
+	 
+	 
+	      CREATE LASTCHILD OF lstran NAME 'headRawTransaction';
+	      Declare hdr REFERENCE TO lstran.headRawTransaction[<];
+		 
+		-- CREATE LASTCHILD OF lstran.listTran.header[<] NAME 'headRawTransaction';
+		-- Declare hdr REFERENCE TO lstran.listTran.header[<].headRawTransaction[<];
+		 
+		SET hdr = headerrowdata;
+		
+	    SET OutputRoot.XMLNSC.(XMLNSC.XmlDeclaration)*.(XMLNSC.Attribute)Version = '1.0'; 
+        SET OutputRoot.XMLNSC.(XMLNSC.XmlDeclaration)*.(XMLNSC.Attribute)Encoding = 'utf-8';
+        SET OutputRoot.XMLNSC."ns:MT_DTC_POS_SALES".(XMLNSC.NamespaceDecl)xmlns:ns = ns; 
+        SET OutputRoot.XMLNSC."ns:MT_DTC_POS_SALES".Transaction = Environment.XMLNSC.ns:DT_DTC_POS_SALES.Transaction;
+        SET Environment.XMLNSC = NULL ;
+        DECLARE Time_St CHARACTER  CAST(CURRENT_TIMESTAMP AS CHARACTER FORMAT 'yyyyMMddHHmmssSSS');
+        SET OutputLocalEnvironment.Destination.File.Directory = '/app/wricef/sd/data/xi/ib/pos/';
+        SET OutputLocalEnvironment.Destination.File.Name  = 'Sales'||'_'||RegisterNum||'_'||Environment.Store||'_'||TranNum||'_'||TranType||'_'||Ddate||'_'||Ttime||'_'||Time_St||'.xml';
+     --     SET OutputLocalEnvironment.Destination.File.Name  =Environment.Store||'_'||Time_St||'.xml';
+		PROPAGATE TO  TERMINAL 'out';
+	    PASSTHRU('UPDATE POS_SUCCESS SET SUCCESS_COUNT = DEFAULT');
+	    
+		END IF ;
+	    
+		RETURN FALSE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;

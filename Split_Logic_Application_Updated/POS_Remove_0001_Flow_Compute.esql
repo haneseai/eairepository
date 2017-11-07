@@ -1,0 +1,45 @@
+
+
+
+
+CREATE COMPUTE MODULE POS_Remove_0001_Flow_Compute
+		CREATE FUNCTION Main() RETURNS BOOLEAN
+		BEGIN
+		DECLARE Indata_Blob,PoType BLOB;
+		DECLARE BlobTOChar CHARACTER;
+		DECLARE temp2,repeat1 INTEGER;
+		DECLARE start INTEGER 5;
+		DECLARE startpois INTEGER 1;
+		DECLARE temp3 CHARACTER;
+		DECLARE temp4 CHARACTER '';
+
+			SET Indata_Blob=CAST(InputRoot.BLOB.BLOB AS BLOB CCSID 1208 ENCODING 273);
+			SET PoType = SUBSTRING(Indata_Blob FROM 1 FOR 4);
+			SET BlobTOChar=CAST(Indata_Blob AS CHARACTER CCSID 1208 ENCODING 273);
+			SET temp2=LENGTH(BlobTOChar);
+			SET repeat1=temp2/260;
+
+			while (startpois<=repeat1) DO
+				SET temp3=SUBSTRING(BlobTOChar from start FOR 256);
+				SET temp4=temp4||temp3;
+				SET startpois=startpois+1;
+				SET start=start+260;
+			end while;
+			SET OutputRoot.BLOB.BLOB=PoType||CAST(temp4 AS BLOB CCSID 1208 ENCODING 273);
+			RETURN TRUE;
+		END;
+
+		CREATE PROCEDURE CopyMessageHeaders() BEGIN
+			DECLARE I INTEGER 1;
+			DECLARE J INTEGER;
+			SET J = CARDINALITY(InputRoot.*[]);
+			WHILE I < J DO
+				SET OutputRoot.*[I] = InputRoot.*[I];
+				SET I = I + 1;
+			END WHILE;
+		END;
+
+		CREATE PROCEDURE CopyEntireMessage() BEGIN
+			SET OutputRoot = InputRoot;
+		END;
+	END MODULE;

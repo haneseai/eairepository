@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://SD-2070/Extract/DTC_Invoice/SAP_AFS/DTC" xmlns="http://SD-2070/Extract/DTC_Invoice/SAP_AFS/DTC">
+  <xsd:complexType name="DT_DTC_POS_Order">
+    <xsd:sequence>
+      <xsd:element name="xmlTran">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element maxOccurs="unbounded" name="listTran">
+              <xsd:complexType>
+                <xsd:sequence>
+                  <xsd:element name="header">
+                    <xsd:complexType>
+                      <xsd:sequence>
+                        <xsd:element minOccurs="0" name="begin" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="date" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="grossMinus" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="grossPlus" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="headerIndicator0" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="headerIndicator1" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="headerItemFlag" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="inactiveTime" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="netCash" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="netCashEnd" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="netNonCashTotal" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="nonSalesTimes" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="operatorNum" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="passw" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="registerNum" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="store" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tenderTime" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="time" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="totalRingTime" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tranNum" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tranType" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tranTypePD" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="rawValue" type="xsd:string"/>
+                      </xsd:sequence>
+                    </xsd:complexType>
+                  </xsd:element>
+                  <xsd:element maxOccurs="unbounded" name="itemList">
+                    <xsd:complexType>
+                      <xsd:sequence>
+                        <xsd:element minOccurs="0" name="headerItemFlag" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="itemType" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="upc" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="department" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="salesAmount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="currency" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="salesTaxPlan" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="salesIndicator0" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="salesIndicator1" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="multiPricingGroup" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="quantity" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="uom" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="itemCount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="unitPrice" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="quantityOverwrite" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="priceOverwrite" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="discountCode" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="discountAmount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="discountPercentage" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="discountIndicator0" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="allowanceAmount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="allowanceTaxCode" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="allowanceIndicator0" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="cashString" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tenderType" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tenderAmount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tenderMaskedAccount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tenderAccountStatus" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tenderIndicator0" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tenderIndicator1" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tenderFaceValue" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="tenderUserData" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="taxAAmount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="taxBAmount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="taxCAmount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="taxDAmount" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="taxIndicator0" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="vipNumber" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="goalsEntry" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="rawValue" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="approvalCode" type="xsd:string"/>
+                        <xsd:element minOccurs="0" name="Approved" type="xsd:string"/>
+						<xsd:element minOccurs="0" name="chasePaymentInfo" type="xsd:string"/>
+						<xsd:element minOccurs="0" name="chasePaymentInfo2" type="xsd:string"/>
+						<xsd:element minOccurs="0" name="swipeSource" type="xsd:string"/>
+						<xsd:element minOccurs="0" name="authorizationSource" type="xsd:string"/>
+						<xsd:element minOccurs="0" name="expirationDate" type="xsd:string"/>
+						<xsd:element minOccurs="0" name="cardLevel" type="xsd:string"/>
+						<xsd:element minOccurs="0" name="cardType" type="xsd:string"/>
+                      </xsd:sequence>
+                    </xsd:complexType>
+                  </xsd:element>
+                </xsd:sequence>
+              </xsd:complexType>
+            </xsd:element>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,36 @@
+
+
+CREATE COMPUTE MODULE PRICE_ETL_ASCII_EBCDIC_Compute1
+	CREATE FUNCTION Main() RETURNS BOOLEAN
+	BEGIN
+		DECLARE i INTEGER 0;
+		SET Environment.FileRead.FinishFile.UpperCase = 'False';
+		SET Environment.FileRead.FinishFile.LowerCase = 'False';
+		DECLARE SleepValue BOOLEAN;
+        SET SleepValue = SLEEP(600000);
+		WHILE Environment.FileRead.FinishFile.UpperCase = 'False' DO
+			CALL CopyMessageHeaders();
+			CALL CopyEntireMessage();
+			SET OutputLocalEnvironment.Destination.File.Offset = i;
+			PROPAGATE TO TERMINAL 'out';
+			SET i = i + 50000000;
+		END WHILE;
+		
+		
+		RETURN FALSE;
+	END;
+
+	CREATE PROCEDURE CopyMessageHeaders() BEGIN
+		DECLARE I INTEGER 1;
+		DECLARE J INTEGER;
+		SET J = CARDINALITY(InputRoot.*[]);
+		WHILE I < J DO
+			SET OutputRoot.*[I] = InputRoot.*[I];
+			SET I = I + 1;
+		END WHILE;
+	END;
+
+	CREATE PROCEDURE CopyEntireMessage() BEGIN
+		SET OutputRoot = InputRoot;
+	END;
+END MODULE;
